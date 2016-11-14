@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -9,11 +10,7 @@
 #include "test.h"
 
 
-// Serialize a dns packet into a heap-alloc'd buffer
-static void* serialize_dns_packet(dns_packet const* packet);
-
-
-dns_packet* new_dns_packet_dom(char const* domain_name, bool isRequest) {
+dns_packet* new_dns_packet_dom(char* domain_name, bool isRequest) {
   dns_packet* packet; // The new packet
   size_t domain_name_len = strlen(domain_name); // Length of payload
 
@@ -58,10 +55,10 @@ dns_packet* new_dns_packet_ip(uint32_t ipv4_addr, bool isRequest) {
 }
 
 
-int send_dns_packet(int sockfd, dns_packet const* packet) {
+int send_dns_packet(int sockfd, dns_packet* packet) {
   struct msghdr header; // Message header for sendmsg()
-  struct iovec iov; // iovec for data to send
-  void* data; // Raw data to send
+  struct iovec* iov; // iovec for data to send
+  struct iovec* curr; // For traversing the iovec
 
   // Validate packet
   if (!is_valid_dns_packet(packet)) {
@@ -69,17 +66,32 @@ int send_dns_packet(int sockfd, dns_packet const* packet) {
     return -1;
   }
 
-  // Allocate for and initialize raw data
-  data = serialize_dns_packet(packet);
-
   // Initialize sendmsg() params
   memset(&header, 0, sizeof(header));
 
-  iov.iov_base = data;
-  iov.iov_len = packet->len;
+  // Build iovec
+  iov = (struct iovec*)malloc(DNS_PACKET_N_FIELDS);
+  curr = iov;
 
-  header.msg_iov = &iov;
-  header.msg_iovlen = 1; // We have a single gather location
+  curr->iov_base = &packet->msg;
+  curr++->iov_len = sizeof(packet->msg);
+
+  curr->iov_base = &packet->len;
+  curr++->iov_len = sizeof(packet->len);
+
+  if (has_string_payload(packet)) {
+    curr->iov_base = packet->contents.domain_name;
+    curr++->iov_len = packet->len;
+  } else {
+    curr->iov_base = &packet->contents;
+    curr++->iov_len = sizeof(packet->contents);
+  }
+
+  curr->iov_base = &packet->checksum;
+  curr->iov_len = sizeof(packet->checksum);
+
+  header.msg_iov = iov;
+  header.msg_iovlen = DNS_PACKET_N_FIELDS; 
 
   return sendmsg(sockfd, &header, 0);
 }
@@ -102,30 +114,17 @@ bool is_valid_dns_packet(dns_packet const* packet) {
 }
 
 
-static void* serialize_dns_packet(dns_packet const* packet) {
-  void* data; // Data buffer
-  uint8_t* curr = 0; // Pointer to current position in data
-  size_t domain_name_len = sizeof(packet) - sizeof(packet->msg) -
-    sizeof(packet->len) - sizeof(packet->checksum); // Len of string, if any
-
-  data = malloc(sizeof(packet));
-
-  // Copy the data
-  memcpy(curr, &packet->msg, sizeof(packet->msg));
-  curr += sizeof(packet->msg);
-  memcpy(curr, &packet->len, sizeof(packet->len));
-  curr += sizeof(packet->len);
-
-  if (has_string_payload(packet)) {
-    memcpy(curr, packet->contents.domain_name, domain_name_len); 
-    curr += sizeof(domain_name_len);
-  } else {
-    memcpy(curr, &packet->contents.ipv4_addr,
-      sizeof(packet->contents.ipv4_addr));
-    curr += sizeof(packet->contents.ipv4_addr);
+uint32_t checksum(uint8_t const* payload, size_t n) {
+  uint32_t sum = 0;
+  for (size_t i = 0; i < n; ++i) {
+    sum += *payload++;
   }
 
-  memcpy(curr, &packet->checksum, sizeof(packet->checksum));
+  return sum;
+}
 
-  return data;
+
+void destroy_dns_packet(dns_packet** dppp) {
+  free(*dppp);
+  *dppp = NULL;
 }

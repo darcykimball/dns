@@ -5,7 +5,7 @@
 
 #define TEST_ASSERT(e) \
   fprintf(stderr, "%s%s ", "Assertion ", #e); \
-  (e) ? fprintf(stderr, "FAILED") : fprintf(stderr, "PASSED")
+  (e) ? fprintf(stderr, "PASSED\n") : fprintf(stderr, "FAILED\n")
 
 #define TEST_EQUAL(e1,e2) TEST_ASSERT(e1 == e2)
 
