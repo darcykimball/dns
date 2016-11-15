@@ -18,7 +18,7 @@ int main() {
   TEST_ASSERT(is_valid_dns_packet(lookup_req));
   TEST_ASSERT(lookup_req->msg == LOOKUP_REQUEST);
   TEST_ASSERT(strcmp(lookup_req->contents.domain_name, lookup_req_dom) == 0);
-  TEST_ASSERT(strlen(lookup_req->contents.domain_name) == lookup_req->len);
+  TEST_ASSERT(strlen(lookup_req->contents.domain_name) + 1 == lookup_req->len);
 
 
   dns_packet* lookup_resp = new_dns_packet_ip(lookup_resp_ip, false);
@@ -44,7 +44,7 @@ int main() {
   TEST_ASSERT(is_valid_dns_packet(rev_lookup_resp));
   TEST_ASSERT(rev_lookup_resp->msg == REVERSE_LOOKUP_RESPONSE);
   TEST_ASSERT(strcmp(rev_lookup_resp->contents.domain_name, rev_lookup_resp_dom) == 0);
-  TEST_ASSERT(strlen(rev_lookup_resp->contents.domain_name) == rev_lookup_resp->len);
+  TEST_ASSERT(strlen(rev_lookup_resp->contents.domain_name) + 1 == rev_lookup_resp->len);
 
 
   destroy_dns_packet(&lookup_req);

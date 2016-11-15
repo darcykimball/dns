@@ -31,9 +31,9 @@ int main() {
   TEST_ASSERT(lookup_by_addr(table, 0xDEADC0DE) != NULL);
 
   TEST_ASSERT(strcmp(lookup_by_addr(table, 0x01020304)->name, "www.google.com") == 0);
-  TEST_ASSERT(strcmp(lookup_by_addr(table, 0x05060708)->name, "www.google.com") == 0);
-  TEST_ASSERT(strcmp(lookup_by_addr(table, 0x090A0B0C)->name, "www.google.com") == 0);
-  TEST_ASSERT(strcmp(lookup_by_addr(table, 0xDEADC0DE)->name, "www.google.com") == 0);
+  TEST_ASSERT(strcmp(lookup_by_addr(table, 0x05060708)->name, "www.yahoo.com") == 0);
+  TEST_ASSERT(strcmp(lookup_by_addr(table, 0x090A0B0C)->name, "www.bing.com") == 0);
+  TEST_ASSERT(strcmp(lookup_by_addr(table, 0xDEADC0DE)->name, "www.duckduckgo.com") == 0);
 
 
   destroy_dns_lookup_table(&table);
