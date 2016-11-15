@@ -4,6 +4,10 @@
 #include "list.h"
 
 
+// Helper for list destructor
+static void destroy_nodes(node* n);
+
+
 node* new_node(node* next, void* data) {
   node* n = (node*)malloc(sizeof(node)); 
   n->next = next;
@@ -44,7 +48,6 @@ void* snoc(list* l) {
 }
 
 
-
 void* find_list(list* l, void* data, eq_rel eq_fn) {
   node* curr = l->head;
 
@@ -56,4 +59,21 @@ void* find_list(list* l, void* data, eq_rel eq_fn) {
   }
 
   return NULL;
+}
+
+
+void destroy_list(list** lpp) {
+  list* l = *lpp;
+  destroy_nodes(l->head);
+  free(l);
+  *lpp = NULL;
+}
+
+static void destroy_nodes(node* n) {
+  if (n == NULL) {
+    return;
+  }
+
+  destroy_nodes(n->next);
+  free(n);
 }

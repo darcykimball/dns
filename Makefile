@@ -1,19 +1,17 @@
 CC = clang-3.7
 CCFLAGS = -Wall -g
 DEBUGFLAGS = -DDEBUG
-TESTS = test_list test_hash_table
+TESTS = test_list test_dns_packet
 
 all: server client
 
 tests: $(TESTS)
 
-server: server.o dns.o lookup_table.o hash_table.o list.o SuperFastHash.o
-	$(CC) $(CCFLAGS) -o server server.o dns.o lookup_table.o hash_table.o list.o \
-          SuperFastHash.o
-
-client: client.o dns.o lookup_table.o hash_table.o list.o SuperFastHash.o
-	$(CC) $(CCFLAGS) -o client client.o dns.o lookup_table.o hash_table.o list.o \
-          SuperFastHash.o
+server: server.o dns.o dns_lookup_table.o list.o bimap.o
+	$(CC) $(CCFLAGS) -o server server.o dns.o dns_lookup_table.o list.o bimap.o
+         
+client: client.o dns.o dns_lookup_table.h list.o
+	$(CC) $(CCFLAGS) -o client client.o dns.o list.o
 
 server.o: server.c dns.h
 	$(CC) $(CCFLAGS) -c server.c
@@ -27,26 +25,23 @@ dns.o: dns.c dns.h
 list.o: list.c list.h
 	$(CC) $(CCFLAGS) -c list.c
 
-SuperFastHash.o: SuperFastHash.c SuperFastHash.h
-	$(CC) $(CCFLAGS) -c SuperFastHash.c
+bimap.o: bimap.c bimap.h
+	$(CC) $(CCFLAGS) -c bimap.c
 
-hash_table.o: hash_table.c hash_table.h
-	$(CC) $(CCFLAGS) -c hash_table.c
-
-lookup_table.o: lookup_table.c lookup_table.h hash_table.h list.h
-	$(CC) $(CCFLAGS) -c lookup_table.c
-
-test_hash_table: test_hash_table.o hash_table.o SuperFastHash.o list.o
-	$(CC) $(CCFLAGS) -o test_hash_table test_hash_table.o hash_table.o list.o
-
-test_hash_table.o: test_hash_table.c test.h SuperFastHash.h
-	$(CC) $(CCFLAGS) -c test_hash_table.c
+dns_lookup_table.o: dns_lookup_table.c dns_lookup_table.h hash_table.h list.h
+	$(CC) $(CCFLAGS) -c dns_lookup_table.c
 
 test_list.o: test_list.c test.h
 	$(CC) $(CCFLAGS) -c test_list.c
 
 test_list: test_list.o list.o
 	$(CC) $(CCFLAGS) -o test_list test_list.o list.o
+
+test_dns_packet.o: test_dns_packet.c
+	$(CC) $(CCFLAGS) -c test_dns_packet.c
+
+test_dns_packet: test_dns_packet.o dns.o
+	$(CC) $(CCFLAGS) -o test_dns_packet test_dns_packet.o dns.o
 
 debug: server.c client.c debug.h
 	$(CC) $(CCFLAGS) $(DEBUGFLAGS) -o server server.c

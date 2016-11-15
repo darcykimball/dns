@@ -47,8 +47,9 @@ dns_packet* new_dns_packet_ip(uint32_t ipv4_addr, bool isRequest) {
     packet->msg = LOOKUP_RESPONSE;
   }
 
+  // FIXME: do we need to convert this address to network order??
   packet->contents.ipv4_addr = ipv4_addr;
-  packet->len = sizeof(packet);
+  packet->len = sizeof(packet->contents.ipv4_addr);
   packet->checksum = checksum((uint8_t*)&network_order_ip, sizeof(ipv4_addr));
 
   return packet;
@@ -102,11 +103,10 @@ bool is_valid_dns_packet(dns_packet const* packet) {
     packet->msg == LOOKUP_REQUEST || packet->msg == REVERSE_LOOKUP_RESPONSE
   ) {
     return
-      packet->len == sizeof(packet) - sizeof(packet->contents)
-                       + strlen(packet->contents.domain_name);
+      packet->len == strlen(packet->contents.domain_name);
   } else if (
     packet->msg == LOOKUP_RESPONSE || packet->msg == REVERSE_LOOKUP_REQUEST) {
-    return packet->len == sizeof(packet);
+    return packet->len == sizeof(packet->contents.ipv4_addr);
   }
 
   // The msg field is malformed

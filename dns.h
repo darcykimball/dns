@@ -23,10 +23,10 @@ typedef union {
 
 // Packet format
 typedef struct {
-  dns_message msg;
-  uint32_t len;
-  payload contents;
-  uint32_t checksum; 
+  dns_message msg;    // Type of message
+  uint32_t len;       // Length of the payload
+  payload contents;   // Payload
+  uint32_t checksum;  // Checksum of payload
 } dns_packet;
 
 
