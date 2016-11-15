@@ -24,8 +24,7 @@ dns_packet* new_dns_packet_dom(char const* domain_name, bool is_request) {
   }
 
   packet->contents.domain_name = domain_name;
-  packet->len = sizeof(packet) - sizeof(packet->contents)
-                  + domain_name_len;
+  packet->len = domain_name_len;
   packet->checksum = checksum((uint8_t*)domain_name, domain_name_len);
 
   return packet;
