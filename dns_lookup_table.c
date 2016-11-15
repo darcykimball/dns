@@ -19,15 +19,15 @@ void add_entry(dns_lookup_table* table, char const* name, uint32_t addr) {
 }
 
 
-entry* lookup_name(dns_lookup_table* table, char const* name) {
+char const* lookup_by_ame(dns_lookup_table* table, char const* name) {
   entry dummy = { name, 0 };
-  return find_by_fst(table, &dummy);
+  return AS_ENTRY(find_by_fst(table, &dummy))->name;
 }
 
 
-entry* lookup_addr(dns_lookup_table* table, uint32_t addr) {
+uint32_t lookup_addr(dns_lookup_table* table, uint32_t addr) {
   entry dummy = { NULL, addr };
-  return find_by_snd(table, &dummy);
+  return AS_ENTRY(find_by_snd(table, &dummy))->addr;
 }
 
 
