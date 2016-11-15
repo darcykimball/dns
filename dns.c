@@ -10,14 +10,14 @@
 #include "test.h"
 
 
-dns_packet* new_dns_packet_dom(char* domain_name, bool isRequest) {
+dns_packet* new_dns_packet_dom(char const* domain_name, bool is_request) {
   dns_packet* packet; // The new packet
   size_t domain_name_len = strlen(domain_name); // Length of payload
 
   packet = (dns_packet*)malloc(sizeof(dns_packet));
 
   // Determine message type
-  if (isRequest) {
+  if (is_request) {
     packet->msg = LOOKUP_REQUEST;
   } else { // This is a response
     packet->msg = REVERSE_LOOKUP_RESPONSE;
@@ -32,7 +32,7 @@ dns_packet* new_dns_packet_dom(char* domain_name, bool isRequest) {
 }
 
 
-dns_packet* new_dns_packet_ip(uint32_t ipv4_addr, bool isRequest) {
+dns_packet* new_dns_packet_ip(uint32_t ipv4_addr, bool is_request) {
   dns_packet* packet; // The new packet
 
   // ip addr in network order
@@ -41,7 +41,7 @@ dns_packet* new_dns_packet_ip(uint32_t ipv4_addr, bool isRequest) {
   packet = (dns_packet*)malloc(sizeof(dns_packet));
 
   // Determine message type
-  if (isRequest) {
+  if (is_request) {
     packet->msg = REVERSE_LOOKUP_REQUEST;
   } else { // This is a response
     packet->msg = LOOKUP_RESPONSE;
@@ -51,6 +51,16 @@ dns_packet* new_dns_packet_ip(uint32_t ipv4_addr, bool isRequest) {
   packet->contents.ipv4_addr = ipv4_addr;
   packet->len = sizeof(packet->contents.ipv4_addr);
   packet->checksum = checksum((uint8_t*)&network_order_ip, sizeof(ipv4_addr));
+
+  return packet;
+}
+
+
+dns_packet* new_dns_packet_lookup_failed() {
+  dns_packet* packet; // The new packet
+
+  packet = (dns_packet*)malloc(sizeof(dns_packet));
+  memset(packet, 0, sizeof(dns_packet));  
 
   return packet;
 }
@@ -81,7 +91,10 @@ int send_dns_packet(int sockfd, dns_packet* packet) {
   curr++->iov_len = sizeof(packet->len);
 
   if (has_string_payload(packet)) {
-    curr->iov_base = packet->contents.domain_name;
+    // XXX: the cast is here to silence compiler warnings regarding const-ness.
+    // we're using void* already so full const-correctness is already screwed
+    // anyway.
+    curr->iov_base = (char*)packet->contents.domain_name;
     curr++->iov_len = packet->len;
   } else {
     curr->iov_base = &packet->contents;

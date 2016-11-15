@@ -14,17 +14,19 @@ typedef enum {
   REVERSE_LOOKUP_RESPONSE
 } dns_message;
 
+
 // Type of payloads; either a string (some domain name) or an IP address (a
 // 32-bit word)
 typedef union {
-  char* domain_name;
+  char const* domain_name;
   uint32_t ipv4_addr;
 } payload;
 
 // Packet format
 typedef struct {
   dns_message msg;    // Type of message
-  uint32_t len;       // Length of the payload
+  uint32_t len;       // Length of the payload. A length of 0 in a response
+                      // packet means the lookup failed
   payload contents;   // Payload
   uint32_t checksum;  // Checksum of payload
 } dns_packet;
@@ -33,12 +35,19 @@ typedef struct {
 #define DNS_PACKET_N_FIELDS 4
 
 
+#define AS_DNS_PACKET(p) ((dns_packet*)(p))
+
+
 // Construct a string-payload dns packet
-dns_packet* new_dns_packet_dom(char* domain_name, bool isRequest);
+dns_packet* new_dns_packet_dom(char const* domain_name, bool isRequest);
 
 
 // Construct a ip-addr-payload dns packet
 dns_packet* new_dns_packet_ip(uint32_t ipv4_addr, bool isRequest);
+
+
+// Construct a 'lookup failed' response packet, which has 0 for every field
+dns_packet* new_dns_packet_lookup_failed();
 
 
 // Send a dns packet as a message (datagram)
