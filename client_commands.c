@@ -66,6 +66,14 @@ void send_lookup_req(size_t argc, char** argv) {
   ip_as_string(((dns_packet*)packet_buffer)->contents.ipv4_addr, ip_string);
 
   // FIXME: validate checksum and packet!!
+  // Validate reply packet
+  LOG("Checking reply...");
+  if (!is_valid_dns_packet(AS_DNS_PACKET(packet_buffer))) {
+    fprintf(stderr,
+      "send_lookup_req(): Invalid response received; discarding!");
+    return;
+  }
+  LOG("all good!");
 
   printf("Reply received: ");
   if (AS_DNS_PACKET(packet_buffer)->len == 0) {
@@ -84,8 +92,7 @@ void send_rev_lookup_req(size_t argc, char** argv) {
   uint32_t addr;
   char ip_string[MAX_IP_STRLEN]; // For representing input addr
 
-  // FIXME remove!!
-  memset(ip_string, 0, sizeof(ip_string));
+  dns_packet reply; // For examining reply
 
   if (argc != 2) {
     fprintf(stderr, "Usage: rev-lookup ip\n");
@@ -98,8 +105,6 @@ void send_rev_lookup_req(size_t argc, char** argv) {
     return;
   }
 
-  fprintf(stderr, "addr = %u\n", addr);
-
   dns_packet* req = new_dns_packet_ip(addr, true);
 
   send_dns_packet(dns_server_fd, req, NULL);
@@ -111,22 +116,28 @@ void send_rev_lookup_req(size_t argc, char** argv) {
   ip_as_string(addr, ip_string);
 
   // FIXME: validate checksum and packet!!
+  // Validate reply packet
+
+  reply.msg = AS_DNS_PACKET(packet_buffer)->msg;
+  reply.len = AS_DNS_PACKET(packet_buffer)->len;
+  reply.checksum = *(uint32_t*)(packet_buffer + reply.len); 
+  reply.contents.domain_name =
+    (char*)(packet_buffer + offsetof(dns_packet, contents));
+            
+  LOG("Checking reply...");
+  if (!is_valid_dns_packet(&reply)) {
+    fprintf(stderr,
+      "send_rev_lookup_req(): Invalid response received; discarding!");
+    return;
+  }
+  LOG("all good!");
 
   printf("Reply received: ");
   if (AS_DNS_PACKET(packet_buffer)->len == 0) {
     printf("Reverse lookup for %s failed!\n", ip_string);
   } else {
-    // FIXME: remove!!
-    fprintf(stderr, "Length of looked up name is %u\n", AS_DNS_PACKET(packet_buffer)->len);
-    fprintf(stderr, "Length of looked up name, calculated, is %lu\n", strlen((char*)(packet_buffer + offsetof(dns_packet, contents))));
-
-    // Null-terminate the string within the buffer
-    // FIXME: this works, but something doesn't add up (literally) check!!!
-    *(char*)(packet_buffer + offsetof(dns_packet, contents)
-      + AS_DNS_PACKET(packet_buffer)->len) = '\0';
-            
     printf("Domain name for %s is %s\n", ip_string,
-      (char*)(packet_buffer + offsetof(dns_packet, contents)));
+      reply.contents.domain_name);
   }
 
   // Cleanup
@@ -178,10 +189,6 @@ static bool parse_ip(char* input, uint32_t* addr) {
     }         
     
     bytes[i] = (uint32_t)parsed;
-
-    // FIXME remove!!
-    fprintf(stderr, "byte_strs[%lu]: \"%s\"\n", i, byte_strs[i]);
-    fprintf(stderr, "byte_strs[%lu]: %u\n", i, bytes[i]);
   }
 
   *addr = (bytes[0] << 3*8) | (bytes[1] << 2*8) | (bytes[2] << 8) | bytes[3];
@@ -197,9 +204,6 @@ static void ip_as_string(uint32_t addr, char* out) {
     num_chars = sprintf(curr, "%u", MS_BYTE(addr));
     curr += num_chars;
 
-    // FIXME
-    fprintf(stderr, "MS_BYTE(addr) = %u\n", MS_BYTE(addr));
-    
     if (i < 3) {
       sprintf(curr, ".");
       ++curr;

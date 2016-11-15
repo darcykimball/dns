@@ -73,7 +73,9 @@ int main() {
     LOG("Got a packet!");
 
     LOG("Handling request...");
-    handle_req(buf, table, s, &src_addr);
+    if (!handle_req(buf, table, s, &src_addr)) {
+      fprintf(stderr, "Couldn't handle request!\n");
+    }
     LOG("done!");
   }
 
@@ -118,7 +120,10 @@ static bool handle_req(uint8_t const* buf, dns_lookup_table const* table,
       }
 
       // Send reply
-      send_dns_packet(s, reply, dest);
+      if ((send_dns_packet(s, reply, dest) < 0)) {
+        fprintf(stderr, "handle_req(): Unable to send lookup reply!\n");
+        return false;
+      }
       
       break;
 
@@ -135,7 +140,10 @@ static bool handle_req(uint8_t const* buf, dns_lookup_table const* table,
       }
 
       // Send reply
-      send_dns_packet(s, reply, dest);
+      if ((send_dns_packet(s, reply, dest) < 0)) {
+        fprintf(stderr, "handle_req(): Unable to send reverse lookup reply!\n");
+        false;
+      }
 
       break;
 
