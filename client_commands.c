@@ -57,7 +57,10 @@ void send_lookup_req(size_t argc, char** argv) {
 
   dns_packet* req = new_dns_packet_dom(argv[1], true);
 
-  send_dns_packet(dns_server_fd, req, NULL);
+  if (send_dns_packet(dns_server_fd, req, NULL) < 0) {
+    fprintf(stderr, "send_lookup_req(): Unable to send request!");
+    return;
+  }
   LOG("Sent lookup request");
 
   // Get the response
@@ -107,7 +110,10 @@ void send_rev_lookup_req(size_t argc, char** argv) {
 
   dns_packet* req = new_dns_packet_ip(addr, true);
 
-  send_dns_packet(dns_server_fd, req, NULL);
+  if (send_dns_packet(dns_server_fd, req, NULL) < 0) {
+    fprintf(stderr, "send_lookup_req(): Unable to send request!");
+    return;
+  }
   LOG("Sent reverse lookup request");
 
   // Get the response
