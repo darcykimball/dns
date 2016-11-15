@@ -21,11 +21,11 @@ void insert_bimap(bimap* map, void* pair);
 
 
 // Find by first component
-void* find_by_fst(bimap* map, void* pair);
+void* find_by_fst(bimap const* map, void* pair);
 
 
 // Find by second component
-void* find_by_snd(bimap* map, void* pair);
+void* find_by_snd(bimap const* map, void* pair);
 
 
 // Destroy a bimap

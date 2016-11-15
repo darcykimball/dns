@@ -48,7 +48,7 @@ void* snoc(list* l) {
 }
 
 
-void* find_list(list* l, void* data, eq_rel eq_fn) {
+void* find_list(list const* l, void* data, eq_rel eq_fn) {
   node* curr = l->head;
 
   while(curr != NULL) {

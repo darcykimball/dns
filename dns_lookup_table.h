@@ -31,11 +31,11 @@ void add_entry(dns_lookup_table* table, char const* name, uint32_t addr);
 
 
 // Lookup an entry in the table
-uint32_t lookup_by_name(dns_lookup_table* table, char const* name);
+entry* lookup_by_name(dns_lookup_table const* table, char const* name);
 
 
 // Reverse-lookup an entry in the table
-char const* lookup_by_addr(dns_lookup_table* table, uint32_t addr);
+entry* lookup_by_addr(dns_lookup_table const* table, uint32_t addr);
 
 
 // Destroy a lookup table

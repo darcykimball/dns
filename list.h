@@ -44,7 +44,7 @@ typedef bool (*eq_rel)(void const*, void const*);
 
 
 // Find the first equivalent element to a given one
-void* find_list(list* l, void* data, eq_rel eq_fn);
+void* find_list(list const* l, void* data, eq_rel eq_fn);
 
 
 // Destructor

@@ -66,7 +66,7 @@ dns_packet* new_dns_packet_lookup_failed() {
 }
 
 
-int send_dns_packet(int sockfd, dns_packet* packet) {
+int send_dns_packet(int sockfd, dns_packet* packet, struct sockaddr_in const* dest) {
   struct msghdr header; // Message header for sendmsg()
   struct iovec* iov; // iovec for data to send
   struct iovec* curr; // For traversing the iovec
@@ -103,6 +103,12 @@ int send_dns_packet(int sockfd, dns_packet* packet) {
 
   curr->iov_base = &packet->checksum;
   curr->iov_len = sizeof(packet->checksum);
+
+  // Address the packet if needed
+  if (dest != NULL) {
+    header.msg_name = (void*)dest;  
+    header.msg_namelen = sizeof(struct sockaddr_in);
+  }
 
   header.msg_iov = iov;
   header.msg_iovlen = DNS_PACKET_N_FIELDS; 

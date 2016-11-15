@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <netinet/in.h>
 #include <inttypes.h>
 
 
@@ -52,7 +53,7 @@ dns_packet* new_dns_packet_lookup_failed();
 
 // Send a dns packet as a message (datagram)
 // Returns size of packet sent, otherwise -1 for error
-int send_dns_packet(int sockfd, dns_packet*);
+int send_dns_packet(int sockfd, dns_packet*, struct sockaddr_in const* dest);
 
 
 // Validate a dns packet

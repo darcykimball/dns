@@ -10,6 +10,9 @@
 #include "shell.h"
 #include "dns.h"
 
+#define DEBUG
+#include "debug.h"
+
 
 // Get the most significant byte of a 32-bit int
 #define MS_BYTE(n) (((n) & 0xFF000000) >> 3*8)
@@ -53,9 +56,11 @@ void send_lookup_req(size_t argc, char** argv) {
 
   dns_packet* req = new_dns_packet_dom(argv[1], true);
 
-  send_dns_packet(dns_server_fd, req);
+  send_dns_packet(dns_server_fd, req, NULL);
+  LOG("Sent lookup request");
 
   // Get the response
+  LOG("Waiting for response...");
   recv(dns_server_fd, packet_buffer, sizeof(packet_buffer), 0);
   ip_as_string(((dns_packet*)packet_buffer)->contents.ipv4_addr, ip_string);
 
@@ -91,9 +96,11 @@ void send_rev_lookup_req(size_t argc, char** argv) {
 
   dns_packet* req = new_dns_packet_ip(addr, true);
 
-  send_dns_packet(dns_server_fd, req);
+  send_dns_packet(dns_server_fd, req, NULL);
+  LOG("Sent reverse lookup request");
 
   // Get the response
+  LOG("Waiting for response...");
   recv(dns_server_fd, packet_buffer, sizeof(packet_buffer), 0);
   ip_as_string(addr, ip_string);
 

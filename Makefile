@@ -1,7 +1,7 @@
 CC = clang-3.7
 CCFLAGS = -Wall -g
 DEBUGFLAGS = -DDEBUG
-TESTS = test_list test_dns_packet
+TESTS = test_list test_dns_packet test_lookup
 
 all: server client
 
@@ -39,6 +39,13 @@ dns_lookup_table.o: dns_lookup_table.c dns_lookup_table.h hash_table.h list.h
 
 test_list.o: test_list.c test.h
 	$(CC) $(CCFLAGS) -c test_list.c
+
+test_lookup.o: test_lookup.c test.h
+	$(CC) $(CCFLAGS) -c test_lookup.c
+
+test_lookup: test_lookup.o dns_lookup_table.o bimap.o list.o
+	$(CC) $(CCFLAGS) -o test_lookup test_lookup.o dns_lookup_table.o bimap.o \
+          list.o
 
 test_list: test_list.o list.o
 	$(CC) $(CCFLAGS) -o test_list test_list.o list.o
