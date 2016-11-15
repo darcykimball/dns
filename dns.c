@@ -8,11 +8,20 @@
 
 #include "dns.h"
 #include "test.h"
+#include "debug.h"
 
 
 dns_packet* new_dns_packet_dom(char const* domain_name, bool is_request) {
   dns_packet* packet; // The new packet
-  size_t domain_name_len = strlen(domain_name); // Length of payload
+  size_t domain_name_len = strlen(domain_name) + 1; // Length of payload
+  // ^ XXX: Why are we sending the null byte? For this particular application,
+  // the receiver would probably need to either set a byte in the receive
+  // buffer to the null byte (to even use the payload as a string), potentially
+  // clobbering other data, or else copy the whole thing.
+  // Both are unnecessarily wasteful. Keeping the null byte lets the receiver
+  // use the string part of the raw data directly.
+  // Also, not doing this led to some bugs: I forgot to consistently account
+  // for the lack of the null byte, leading to all sorts of mysterious data.
 
   packet = (dns_packet*)malloc(sizeof(dns_packet));
 
@@ -93,11 +102,11 @@ int send_dns_packet(int sockfd, dns_packet* packet, struct sockaddr_in const* de
     // XXX: the cast is here to silence compiler warnings regarding const-ness.
     // we're using void* already so full const-correctness is already screwed
     // anyway.
-    curr->iov_base = (char*)packet->contents.domain_name;
+    curr->iov_base = (char*)(packet->contents.domain_name);
     curr++->iov_len = packet->len;
   } else {
-    curr->iov_base = &packet->contents;
-    curr++->iov_len = sizeof(packet->contents);
+    curr->iov_base = &packet->contents.ipv4_addr;
+    curr++->iov_len = sizeof(packet->contents.ipv4_addr);
   }
 
   curr->iov_base = &packet->checksum;
@@ -126,7 +135,7 @@ bool is_valid_dns_packet(dns_packet const* packet) {
     packet->msg == LOOKUP_REQUEST || packet->msg == REVERSE_LOOKUP_RESPONSE
   ) {
     return
-      packet->len == strlen(packet->contents.domain_name);
+      packet->len == (strlen(packet->contents.domain_name) + 1);
   } else if (
     packet->msg == LOOKUP_RESPONSE || packet->msg == REVERSE_LOOKUP_REQUEST) {
     return packet->len == sizeof(packet->contents.ipv4_addr);
