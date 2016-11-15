@@ -12,6 +12,7 @@ bimap* new_bimap(eq_rel eq_fst, eq_rel eq_snd) {
   return map;
 }
 
+
 void insert_bimap(bimap* map, void* pair) {
   cons(pair, map->pairs);
 }
@@ -25,6 +26,7 @@ void* find_by_fst(bimap* map, void* fst) {
 void* find_by_snd(bimap* map, void* snd) {
   return find_list(map->pairs, snd, map->eq_snd);
 }
+
 
 void destroy_bimap(bimap** bmpp) {
   bimap* map = *bmpp;
