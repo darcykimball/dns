@@ -18,13 +18,13 @@ void insert_bimap(bimap* map, void* pair) {
 }
 
 
-void* find_by_fst(bimap const* map, void* fst) {
-  return find_list(map->pairs, fst, map->eq_fst);
+void* find_by_fst(bimap const* map, void* pair) {
+  return find_list(map->pairs, pair, map->eq_fst);
 }
 
 
-void* find_by_snd(bimap const* map, void* snd) {
-  return find_list(map->pairs, snd, map->eq_snd);
+void* find_by_snd(bimap const* map, void* pair) {
+  return find_list(map->pairs, pair, map->eq_snd);
 }
 
 
