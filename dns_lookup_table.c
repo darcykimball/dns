@@ -36,11 +36,11 @@ void destroy_dns_lookup_table(dns_lookup_table** ltpp) {
 }
 
 
-bool name_eq(void const* name1, void const* name2) {
-  return strcmp((char const*)name1, (char const*)name2) == 0;
+bool name_eq(void const* e1, void const* e2) {
+  return strcmp(AS_ENTRY(e1)->name, AS_ENTRY(e2)->name) == 0;
 }
 
 
-bool addr_eq(void const* addr1, void const* addr2) {
-  return *(uint32_t*)addr1 == *(uint32_t*)addr2;
+bool addr_eq(void const* e1, void const* e2) {
+  return AS_ENTRY(e1)->addr == AS_ENTRY(e2)->addr;
 }

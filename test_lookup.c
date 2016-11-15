@@ -25,6 +25,10 @@ int main() {
   TEST_ASSERT(lookup_by_name(table, "www.bing.com")->addr == 0x090A0B0C);
   TEST_ASSERT(lookup_by_name(table, "www.duckduckgo.com")->addr == 0xDEADC0DE);
   
+  TEST_ASSERT(lookup_by_addr(table, 0x01020304) != NULL);
+  TEST_ASSERT(lookup_by_addr(table, 0x05060708) != NULL);
+  TEST_ASSERT(lookup_by_addr(table, 0x090A0B0C) != NULL);
+  TEST_ASSERT(lookup_by_addr(table, 0xDEADC0DE) != NULL);
 
   TEST_ASSERT(strcmp(lookup_by_addr(table, 0x01020304)->name, "www.google.com") == 0);
   TEST_ASSERT(strcmp(lookup_by_addr(table, 0x05060708)->name, "www.google.com") == 0);
