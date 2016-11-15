@@ -13,7 +13,7 @@ typedef struct {
 
 
 // Construct an empty bimap
-bimap* new_bimap();
+bimap* new_bimap(eq_rel eq_fst, eq_rel eq_snd);
 
 
 // Insert an entry
