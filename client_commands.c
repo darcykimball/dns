@@ -181,5 +181,4 @@ static void ip_as_string(uint32_t addr, char* out) {
     assert(num_chars > 0); // XXX: too lazy to do proper error-checking
 
   }
-  sprintf(curr, ".");
 }
