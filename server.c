@@ -40,7 +40,7 @@ int main() {
     exit(EXIT_FAILURE);
   }
 
-  // Wait for connection, then receive and print text
+  // Wait for packets, and send out an appropriate reply
   while ((len = recvfrom(s, buf, sizeof(buf), 0,
                   (struct sockaddr*)&src_addr, &src_addr_len))) {
     printf("Received \"%s\"\n", buf);

@@ -6,8 +6,11 @@
 #include "dns.h"
 
 
+#define N_COMMANDS 2
+
+
 // Lookup commands. There are only 2: lookup and reverse lookup.
-extern command_pair dns_lookup_commands[2];
+extern command_pair dns_lookup_commands[N_COMMANDS];
 
 
 // The file-descriptor for the socket to send requests through.

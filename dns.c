@@ -14,7 +14,7 @@ dns_packet* new_dns_packet_dom(char* domain_name, bool isRequest) {
   dns_packet* packet; // The new packet
   size_t domain_name_len = strlen(domain_name); // Length of payload
 
-  packet = (dns_packet*)malloc(sizeof(packet));
+  packet = (dns_packet*)malloc(sizeof(dns_packet));
 
   // Determine message type
   if (isRequest) {
@@ -38,7 +38,7 @@ dns_packet* new_dns_packet_ip(uint32_t ipv4_addr, bool isRequest) {
   // ip addr in network order
   uint32_t network_order_ip = htonl(ipv4_addr);
 
-  packet = (dns_packet*)malloc(sizeof(packet));
+  packet = (dns_packet*)malloc(sizeof(dns_packet));
 
   // Determine message type
   if (isRequest) {
@@ -71,7 +71,7 @@ int send_dns_packet(int sockfd, dns_packet* packet) {
   memset(&header, 0, sizeof(header));
 
   // Build iovec
-  iov = (struct iovec*)malloc(DNS_PACKET_N_FIELDS);
+  iov = (struct iovec*)malloc(DNS_PACKET_N_FIELDS * sizeof(struct iovec));
   curr = iov;
 
   curr->iov_base = &packet->msg;

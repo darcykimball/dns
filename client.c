@@ -22,9 +22,7 @@ int main(int argc, char** argv) {
   struct sockaddr_in sin; // TODO
   struct sockaddr_in sin_client; // TODO
   char* host; // TODO
-  char buf[MAX_LINE]; // TODO
   int s; // TODO
-  int len; // TODO
 
   // Get hostname if provided
   if (argc == 2) {
@@ -76,19 +74,7 @@ int main(int argc, char** argv) {
   }
 
   // Main loop; get and send lines of text
-  while (fgets(buf, sizeof(buf), stdin)) {
-    buf[MAX_LINE - 1] = '\0'; // Null-terminate buffer
-    len = strlen(buf) + 1;
-
-    // Send the message
-    send(s, buf, len, 0);
-    printf("Sent out: %s", buf);
-
-    // Receive the reply
-    sleep(1);
-    len = recv(s, buf, sizeof(buf), 0);
-    printf("Received reply: %s", buf);
-  }
+  loop(dns_lookup_commands, N_COMMANDS); 
 
   return EXIT_SUCCESS;
 }
