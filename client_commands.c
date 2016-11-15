@@ -48,6 +48,7 @@ command_pair dns_lookup_commands[2] = {
 // Send a lookup request.
 void send_lookup_req(size_t argc, char** argv) {
   char ip_string[MAX_IP_STRLEN]; // To represent reply data
+  memset(ip_string, 0, sizeof(ip_string));
 
   if (argc != 2) {
     fprintf(stderr, "Usage: lookup domain_name\n");
@@ -64,9 +65,14 @@ void send_lookup_req(size_t argc, char** argv) {
   recv(dns_server_fd, packet_buffer, sizeof(packet_buffer), 0);
   ip_as_string(((dns_packet*)packet_buffer)->contents.ipv4_addr, ip_string);
 
-  // FIXME: validate checksum!!!
+  // FIXME: validate checksum and packet!!
 
-  printf("Reply received: IP addr for %s is %s\n", ip_string, argv[1]);
+  printf("Reply received: ");
+  if (AS_DNS_PACKET(packet_buffer)->len == 0) {
+    printf("Lookup for %s failed!\n", argv[1]);
+  } else {
+    printf("IP addr for %s is %s\n", argv[1], ip_string);
+  }
 
   // Cleanup
   destroy_dns_packet(&req);
@@ -104,10 +110,24 @@ void send_rev_lookup_req(size_t argc, char** argv) {
   recv(dns_server_fd, packet_buffer, sizeof(packet_buffer), 0);
   ip_as_string(addr, ip_string);
 
-  // FIXME: validate checksum!!
+  // FIXME: validate checksum and packet!!
 
-  printf("Reply received: Domain name for %s is %s\n", ip_string,
-    (char*)(packet_buffer + offsetof(dns_packet, contents)));
+  printf("Reply received: ");
+  if (AS_DNS_PACKET(packet_buffer)->len == 0) {
+    printf("Reverse lookup for %s failed!\n", ip_string);
+  } else {
+    // FIXME: remove!!
+    fprintf(stderr, "Length of looked up name is %u\n", AS_DNS_PACKET(packet_buffer)->len);
+    fprintf(stderr, "Length of looked up name, calculated, is %lu\n", strlen((char*)(packet_buffer + offsetof(dns_packet, contents))));
+
+    // Null-terminate the string within the buffer
+    // FIXME: this works, but something doesn't add up (literally) check!!!
+    *(char*)(packet_buffer + offsetof(dns_packet, contents)
+      + AS_DNS_PACKET(packet_buffer)->len) = '\0';
+            
+    printf("Domain name for %s is %s\n", ip_string,
+      (char*)(packet_buffer + offsetof(dns_packet, contents)));
+  }
 
   // Cleanup
   destroy_dns_packet(&req);

@@ -129,6 +129,8 @@ static bool handle_req(uint8_t const* buf, dns_lookup_table const* table,
       if (!found_entry) {
         reply = new_dns_packet_lookup_failed();
       } else {
+        LOG("Found entry:");
+        LOG(found_entry->name);
         reply = new_dns_packet_dom(found_entry->name, false);
       }
 
