@@ -10,8 +10,8 @@ tests: $(TESTS)
 server: server.o dns.o dns_lookup_table.o list.o bimap.o
 	$(CC) $(CCFLAGS) -o server server.o dns.o dns_lookup_table.o list.o bimap.o
          
-client: client.o dns.o dns_lookup_table.h list.o
-	$(CC) $(CCFLAGS) -o client client.o dns.o list.o
+client: client.o dns.o dns_lookup_table.h list.o shell.o client_commands.o
+	$(CC) $(CCFLAGS) -o client client.o dns.o list.o shell.o client_commands.o
 
 server.o: server.c dns.h
 	$(CC) $(CCFLAGS) -c server.c
@@ -24,6 +24,12 @@ dns.o: dns.c dns.h
 
 list.o: list.c list.h
 	$(CC) $(CCFLAGS) -c list.c
+
+shell.o: shell.c shell.h
+	$(CC) $(CCFLAGS) -c shell.c
+
+client_commands.o: client_commands.c client_commands.h
+	$(CC) $(CCFLAGS) -c client_commands.c
 
 bimap.o: bimap.c bimap.h
 	$(CC) $(CCFLAGS) -c bimap.c

@@ -8,12 +8,16 @@
 #include <netdb.h>
 
 #include "debug.h"
+#include "shell.h"
+#include "client_commands.h"
 
 #define SERVER_PORT 5432
 #define MAX_LINE 256
 
+// For use with commands
+int dns_server_fd;
+
 int main(int argc, char** argv) {
-  FILE* fp; // TODO
   struct hostent* hp; // TODO
   struct sockaddr_in sin; // TODO
   struct sockaddr_in sin_client; // TODO
@@ -50,6 +54,9 @@ int main(int argc, char** argv) {
     perror("simplex-talk: socket");
     exit(EXIT_FAILURE);
   }
+
+  // Set socket file descriptor for commands
+  dns_server_fd = s;
 
   // Build address data structure for client
   memset(&sin_client, 0, sizeof(sin_client));
