@@ -53,7 +53,7 @@ void* find_list(list* l, void* data, eq_rel eq_fn) {
 
   while(curr != NULL) {
     if (eq_fn(curr->data, data)) {
-      return data; 
+      return curr->data; 
     }
     curr = curr->next;
   }
