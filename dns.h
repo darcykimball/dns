@@ -59,6 +59,10 @@ int send_dns_packet(int sockfd, dns_packet*);
 bool is_valid_dns_packet(dns_packet const*);
 
 
+// Check if a packet communicates 'lookup failed'
+bool is_lookup_failed_packet(dns_packet const* packet);
+
+
 // Compute the checksum of a payload
 uint32_t checksum(uint8_t const* payload, size_t n);  
 

@@ -112,6 +112,11 @@ int send_dns_packet(int sockfd, dns_packet* packet) {
 
 
 bool is_valid_dns_packet(dns_packet const* packet) {
+  // Special case: packet is 'lookup failed'
+  if (is_lookup_failed_packet(packet)) {
+    return true;
+  }
+
   if (
     packet->msg == LOOKUP_REQUEST || packet->msg == REVERSE_LOOKUP_RESPONSE
   ) {
@@ -124,6 +129,18 @@ bool is_valid_dns_packet(dns_packet const* packet) {
 
   // The msg field is malformed
   return false;
+}
+
+
+bool is_lookup_failed_packet(dns_packet const* packet) {
+  uint8_t* curr_byte = (uint8_t*)packet;
+  for (size_t i = 0; i < sizeof(dns_packet); ++i) {
+    if (*curr_byte != 0) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 
