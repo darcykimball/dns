@@ -106,15 +106,17 @@ int send_dns_packet(int sockfd, dns_packet* packet, struct sockaddr_in const* de
   curr->iov_base = &packet->len;
   curr++->iov_len = sizeof(packet->len);
 
-  if (has_string_payload(packet)) {
-    // XXX: the cast is here to silence compiler warnings regarding const-ness.
-    // we're using void* already so full const-correctness is already screwed
-    // anyway.
-    curr->iov_base = (char*)(packet->contents.domain_name);
-    curr++->iov_len = packet->len;
-  } else {
-    curr->iov_base = &packet->contents.ipv4_addr;
-    curr++->iov_len = sizeof(packet->contents.ipv4_addr);
+  if (!is_lookup_failed_packet(packet)) {
+    if (has_string_payload(packet)) {
+      // XXX: the cast is here to silence compiler warnings regarding const-ness.
+      // we're using void* already so full const-correctness is already screwed
+      // anyway.
+      curr->iov_base = (char*)(packet->contents.domain_name);
+      curr++->iov_len = packet->len;
+    } else {
+      curr->iov_base = &packet->contents.ipv4_addr;
+      curr++->iov_len = sizeof(packet->contents.ipv4_addr);
+    }
   }
 
   curr->iov_base = &packet->checksum;
@@ -159,17 +161,10 @@ void deserialize(dns_packet* received, uint8_t const* buf) {
       // FIXME
       return;
   }
-
-  // Special case: this is potentially a 'lookup failed' packet.
-  // Account for the 4 bytes of nothing where 'contents' should be.
-  if (received->len == 0) {
-    buf += sizeof(uint32_t);
-  }
   buf += received->len;
 
   received->checksum = *(uint32_t*)buf;
 }
-
 
 
 bool is_valid_dns_packet(dns_packet const* packet) {
@@ -208,7 +203,7 @@ uint32_t checksum(dns_packet const* packet) {
 
   // Special case: packet is potentially 'lookup failed' packet
   if (packet->len == 0) {
-    return other_fields_size + sizeof(uint32_t);
+    return other_fields_size;
   }
 
   // Count the total number of bytes in the packet
