@@ -34,7 +34,7 @@ client_commands.o: client_commands.c client_commands.h
 bimap.o: bimap.c bimap.h
 	$(CC) $(CCFLAGS) -c bimap.c
 
-dns_lookup_table.o: dns_lookup_table.c dns_lookup_table.h hash_table.h list.h
+dns_lookup_table.o: dns_lookup_table.c dns_lookup_table.h list.h
 	$(CC) $(CCFLAGS) -c dns_lookup_table.c
 
 test_list.o: test_list.c test.h
