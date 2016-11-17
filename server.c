@@ -104,14 +104,29 @@ static dns_lookup_table* build_table() {
 // Returns whether or not the request was able to be handled.
 static bool handle_req(uint8_t const* buf, dns_lookup_table const* table,
   int s, struct sockaddr_in const* dest) {
-  dns_message req_type = AS_DNS_PACKET(buf)->msg;
   entry* found_entry = NULL; // For result of lookup
   dns_packet* reply; // Response to send back
 
+  dns_message req_type = AS_DNS_PACKET(buf)->msg;
+  char const* req_name; // To hold request payload, if lookup
+  uint32_t req_addr; // To hold request payload, if reverse lookup
+  uint32_t req_len = AS_DNS_PACKET(buf)->len; // Length of request payload
+  uint32_t req_checksum = *(uint32_t*)(buf + offsetof(dns_packet, contents)
+    + req_len);
+
   switch (req_type) {
     case LOOKUP_REQUEST:
-      found_entry = lookup_by_name(table,
-        (char*)(buf + offsetof(dns_packet, contents)));
+      // Validate
+      // FIXME: necessary?
+
+      // Check checksum
+      req_name = (char const*)(buf + offsetof(dns_packet, contents));
+      if (checksum((uint8_t const*)req_name, req_len) != req_checksum) {
+        return false;
+      }
+
+      // Lookup
+      found_entry = lookup_by_name(table, req_name);
       
       if (!found_entry) {
         reply = new_dns_packet_lookup_failed();
@@ -128,6 +143,15 @@ static bool handle_req(uint8_t const* buf, dns_lookup_table const* table,
       break;
 
     case REVERSE_LOOKUP_REQUEST:
+      // Validate FIXME
+
+      // Check checksum
+      req_addr = AS_DNS_PACKET(buf)->contents.ipv4_addr;
+      if (checksum((uint8_t const*)&req_addr, req_len) != req_checksum) {
+        return false;
+      }
+
+      // Reverse lookup
       found_entry = lookup_by_addr(table,
         AS_DNS_PACKET(buf)->contents.ipv4_addr);
 
