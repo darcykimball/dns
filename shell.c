@@ -2,13 +2,16 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdbool.h>
+#include <unistd.h>
+
 #include "shell.h"
 
 
 #define MAX_N_TOKENS 100
 
 
-int echo = 0; // Echo off
+bool echo = 0; // Echo off by default
 
 
 static char const PROMPT_STR[] = ">>";
@@ -25,11 +28,18 @@ void loop(command_pair* command_map, size_t n_commands) {
   char* tokens[MAX_N_TOKENS]; // To hold tokens for a given line
   size_t n_tokens; // Number of tokens for a given line
   command_fn cmd_fn; // Command to invoke
+  bool interactive = !isatty(fileno(stdin)); // Is this getting input interactively?
+
+  if (interactive) {
+    echo = true;
+  }
 
   // Main loop
   while (1) {
     // Print prompt
-    printf("%s", PROMPT_STR);
+    if (!interactive) {
+      printf("%s", PROMPT_STR);
+    }
 
     // Get input
     if (getline(&input, &line_len, stdin) == -1) {

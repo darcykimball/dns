@@ -3,11 +3,12 @@
 
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define MAX_CMD_LEN 16
 
 
-extern int echo; // Flag for echoing commands entered
+extern bool echo; // Flag for echoing commands entered
 
 
 typedef void (*command_fn)(size_t argc, char** argv);
