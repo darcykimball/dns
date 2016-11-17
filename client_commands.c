@@ -22,7 +22,7 @@
 #define MAX_IP_STRLEN 64
 
 
-static uint8_t packet_buffer[BUFSIZ]; // Buffer for holding packet replies
+static uint8_t packet_buffer[4096]; // Buffer for holding packet replies
 
 
 // Split input string on dots, setting 'tokens' to contain the array
@@ -49,6 +49,7 @@ command_pair dns_lookup_commands[2] = {
 void send_lookup_req(size_t argc, char** argv) {
   char ip_string[MAX_IP_STRLEN]; // To represent reply data
   memset(ip_string, 0, sizeof(ip_string));
+  dns_packet reply; // To hold the reply
 
   if (argc != 2) {
     fprintf(stderr, "Usage: lookup domain_name\n");
@@ -68,18 +69,29 @@ void send_lookup_req(size_t argc, char** argv) {
   recv(dns_server_fd, packet_buffer, sizeof(packet_buffer), 0);
   ip_as_string(((dns_packet*)packet_buffer)->contents.ipv4_addr, ip_string);
 
-  // FIXME: validate checksum and packet!!
   // Validate reply packet
+  deserialize(&reply, packet_buffer);
+
   LOG("Checking reply...");
-  if (!is_valid_dns_packet(AS_DNS_PACKET(packet_buffer))) {
+  
+  // FIXME: remove!
+  DUMPI(checksum(&reply) != reply.checksum);
+  DUMPI(!is_valid_dns_packet(&reply));
+  DUMPI(checksum(&reply));
+  DUMPI(reply.checksum);
+
+  if (
+        (checksum(&reply) != reply.checksum)
+     || !is_valid_dns_packet(&reply)
+  ) {
     fprintf(stderr,
-      "send_lookup_req(): Invalid response received; discarding!");
+      "send_lookup_req(): Invalid response received; discarding!\n");
     return;
   }
   LOG("all good!");
 
   printf("Reply received: ");
-  if (AS_DNS_PACKET(packet_buffer)->len == 0) {
+  if (reply.len == 0) {
     printf("Lookup for %s failed!\n", argv[1]);
   } else {
     printf("IP addr for %s is %s\n", argv[1], ip_string);
@@ -121,19 +133,17 @@ void send_rev_lookup_req(size_t argc, char** argv) {
   recv(dns_server_fd, packet_buffer, sizeof(packet_buffer), 0);
   ip_as_string(addr, ip_string);
 
-  // FIXME: validate checksum and packet!!
   // Validate reply packet
-
-  reply.msg = AS_DNS_PACKET(packet_buffer)->msg;
-  reply.len = AS_DNS_PACKET(packet_buffer)->len;
-  reply.checksum = *(uint32_t*)(packet_buffer + reply.len); 
-  reply.contents.domain_name =
-    (char*)(packet_buffer + offsetof(dns_packet, contents));
+  deserialize(&reply, packet_buffer);
             
   LOG("Checking reply...");
-  if (!is_valid_dns_packet(&reply)) {
+
+  // FIXME remove!
+  DUMPI(checksum(&reply) != reply.checksum);
+  DUMPI(!is_valid_dns_packet(&reply));
+  if ((checksum(&reply) != reply.checksum) || !is_valid_dns_packet(&reply)) {
     fprintf(stderr,
-      "send_rev_lookup_req(): Invalid response received; discarding!");
+      "send_rev_lookup_req(): Invalid response received; discarding!\n");
     return;
   }
   LOG("all good!");

@@ -94,7 +94,13 @@ static dns_lookup_table* build_table() {
   add_entry(table, "www.google.com", 0x01020304);
   add_entry(table, "www.yahoo.com", 0x05060708);
   add_entry(table, "www.bing.com", 0x090A0B0C);
-  add_entry(table, "www.duckduckgo.com", 0xDEADC0DE);
+  add_entry(table, "www.gmail.com", 0xDEADC0DE);
+  add_entry(table, "www.drive.google.com", 0xC0DEC0DE);
+  add_entry(table, "www.youtube.com", 0x0C0B0A09);
+  add_entry(table, "www.twitter.com", 0xDEADBEEF);
+  add_entry(table, "www.tumblr.com", 0xCAFEBABE);
+  add_entry(table, "www.blogspot.com", 0x08070605);
+  add_entry(table, "www.facebook.com", 0x04030201);
 
   return table;
 }
@@ -107,72 +113,54 @@ static bool handle_req(uint8_t const* buf, dns_lookup_table const* table,
   entry* found_entry = NULL; // For result of lookup
   dns_packet* reply; // Response to send back
 
-  dns_message req_type = AS_DNS_PACKET(buf)->msg;
-  char const* req_name; // To hold request payload, if lookup
-  uint32_t req_addr; // To hold request payload, if reverse lookup
-  uint32_t req_len = AS_DNS_PACKET(buf)->len; // Length of request payload
-  uint32_t req_checksum = *(uint32_t*)(buf + offsetof(dns_packet, contents)
-    + req_len);
+  dns_packet req; // To store received request
+  deserialize(&req, buf);
 
-  switch (req_type) {
+  // Check checksum
+  if (checksum(&req) != req.checksum) {
+    LOG("Checksum check failed!");
+    return false;
+  }
+
+  // Handle based on type of message
+  switch (req.msg) {
     case LOOKUP_REQUEST:
-      // Validate
-      // FIXME: necessary?
-
-      // Check checksum
-      req_name = (char const*)(buf + offsetof(dns_packet, contents));
-      if (checksum((uint8_t const*)req_name, req_len) != req_checksum) {
-        return false;
-      }
-
       // Lookup
-      found_entry = lookup_by_name(table, req_name);
+      found_entry = lookup_by_name(table, req.contents.domain_name);
       
       if (!found_entry) {
-        reply = new_dns_packet_lookup_failed();
+        reply = new_dns_packet_lookup_failed(true);
       } else {
+        LOG("Found domain name entry");
         reply = new_dns_packet_ip(found_entry->addr, false);
-      }
-
-      // Send reply
-      if ((send_dns_packet(s, reply, dest) < 0)) {
-        fprintf(stderr, "handle_req(): Unable to send lookup reply!\n");
-        return false;
       }
       
       break;
 
     case REVERSE_LOOKUP_REQUEST:
-      // Validate FIXME
-
-      // Check checksum
-      req_addr = AS_DNS_PACKET(buf)->contents.ipv4_addr;
-      if (checksum((uint8_t const*)&req_addr, req_len) != req_checksum) {
-        return false;
-      }
-
       // Reverse lookup
-      found_entry = lookup_by_addr(table,
-        AS_DNS_PACKET(buf)->contents.ipv4_addr);
+      found_entry = lookup_by_addr(table, req.contents.ipv4_addr);
 
       if (!found_entry) {
-        reply = new_dns_packet_lookup_failed();
+        reply = new_dns_packet_lookup_failed(false);
       } else {
-        LOG("Found entry:");
+        LOG("Found IP entry:");
         LOG(found_entry->name);
         reply = new_dns_packet_dom(found_entry->name, false);
-      }
-
-      // Send reply
-      if ((send_dns_packet(s, reply, dest) < 0)) {
-        fprintf(stderr, "handle_req(): Unable to send reverse lookup reply!\n");
-        false;
       }
 
       break;
 
     default:
+      // Invalid message type
       return false;
+  }
+
+
+  // Send reply
+  if ((send_dns_packet(s, reply, dest) < 0)) {
+    fprintf(stderr, "handle_req(): Unable to send reply!\n");
+    return false;
   }
 
   // Cleanup

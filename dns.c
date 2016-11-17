@@ -8,6 +8,8 @@
 
 #include "dns.h"
 #include "test.h"
+
+#define DEBUG
 #include "debug.h"
 
 
@@ -34,7 +36,7 @@ dns_packet* new_dns_packet_dom(char const* domain_name, bool is_request) {
 
   packet->contents.domain_name = domain_name;
   packet->len = domain_name_len;
-  packet->checksum = checksum((uint8_t*)domain_name, domain_name_len);
+  packet->checksum = checksum(packet);
 
   return packet;
 }
@@ -42,9 +44,6 @@ dns_packet* new_dns_packet_dom(char const* domain_name, bool is_request) {
 
 dns_packet* new_dns_packet_ip(uint32_t ipv4_addr, bool is_request) {
   dns_packet* packet; // The new packet
-
-  // ip addr in network order
-  uint32_t network_order_ip = htonl(ipv4_addr);
 
   packet = (dns_packet*)malloc(sizeof(dns_packet));
 
@@ -58,17 +57,20 @@ dns_packet* new_dns_packet_ip(uint32_t ipv4_addr, bool is_request) {
   // FIXME: do we need to convert this address to network order??
   packet->contents.ipv4_addr = ipv4_addr;
   packet->len = sizeof(packet->contents.ipv4_addr);
-  packet->checksum = checksum((uint8_t*)&network_order_ip, sizeof(ipv4_addr));
+  packet->checksum = checksum(packet);
 
   return packet;
 }
 
 
-dns_packet* new_dns_packet_lookup_failed() {
+dns_packet* new_dns_packet_lookup_failed(bool is_lookup) {
   dns_packet* packet; // The new packet
 
   packet = (dns_packet*)malloc(sizeof(dns_packet));
-  memset(packet, 0, sizeof(dns_packet));  
+  packet->msg = is_lookup ? LOOKUP_RESPONSE : REVERSE_LOOKUP_RESPONSE;
+  packet->len = 0;
+  packet->contents.ipv4_addr = 0;
+  packet->checksum = checksum(packet);
 
   return packet;
 }
@@ -84,6 +86,12 @@ int send_dns_packet(int sockfd, dns_packet* packet, struct sockaddr_in const* de
     // Malformed packet
     return -1;
   }
+
+  // FIXME: remove!!
+  fprintf(stderr, "send_dns_packet():\n");
+  DUMPI(packet->msg);
+  DUMPI(packet->len);
+  DUMPI(packet->checksum);
 
   // Initialize sendmsg() params
   memset(&header, 0, sizeof(header));
@@ -125,6 +133,45 @@ int send_dns_packet(int sockfd, dns_packet* packet, struct sockaddr_in const* de
 }
 
 
+void deserialize(dns_packet* received, uint8_t const* buf) {
+  // Msg type
+  received->msg = *(dns_message*)buf;
+  buf += sizeof(dns_message);
+
+  // Length
+  received->len = *(uint32_t*)buf;
+  buf += sizeof(uint32_t);
+
+  switch (received->msg) {
+    case LOOKUP_REQUEST:
+      received->contents.domain_name = (char const*)buf;
+      break;
+    case REVERSE_LOOKUP_RESPONSE:
+      received->contents.domain_name = (char const*)buf;
+      break;
+    case LOOKUP_RESPONSE:
+      received->contents.ipv4_addr = *(uint32_t*)buf;
+      break;
+    case REVERSE_LOOKUP_REQUEST:
+      received->contents.ipv4_addr = *(uint32_t*)buf;
+      break;
+    default:
+      // FIXME
+      return;
+  }
+
+  // Special case: this is potentially a 'lookup failed' packet.
+  // Account for the 4 bytes of nothing where 'contents' should be.
+  if (received->len == 0) {
+    buf += sizeof(uint32_t);
+  }
+  buf += received->len;
+
+  received->checksum = *(uint32_t*)buf;
+}
+
+
+
 bool is_valid_dns_packet(dns_packet const* packet) {
   // Special case: packet is 'lookup failed'
   if (is_lookup_failed_packet(packet)) {
@@ -147,24 +194,29 @@ bool is_valid_dns_packet(dns_packet const* packet) {
 
 
 bool is_lookup_failed_packet(dns_packet const* packet) {
-  uint8_t* curr_byte = (uint8_t*)packet;
-  for (size_t i = 0; i < sizeof(dns_packet); ++i) {
-    if (*curr_byte != 0) {
-      return false;
-    }
-  }
-
-  return true;
+  return packet->len == 0;
 }
 
+  
+uint32_t checksum(dns_packet const* packet) {
+  // XXX: We have to do this calculation because when sending a packet, it's
+  // not simply a serialized struct! It's field-by-field! Lesson (hopefully)
+  // learned.
+  size_t other_fields_size =
+      sizeof(dns_message) // message type
+    + 2*sizeof(uint32_t); // len and checksum
 
-uint32_t checksum(uint8_t const* payload, size_t n) {
-  uint32_t sum = 0;
-  for (size_t i = 0; i < n; ++i) {
-    sum += *payload++;
+  // Special case: packet is potentially 'lookup failed' packet
+  if (packet->len == 0) {
+    return other_fields_size + sizeof(uint32_t);
   }
 
-  return sum;
+  // Count the total number of bytes in the packet
+  if (has_string_payload(packet)) {
+    return other_fields_size + packet->len;
+  } else {
+    return other_fields_size + sizeof(uint32_t);
+  }
 }
 
 

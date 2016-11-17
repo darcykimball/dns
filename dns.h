@@ -29,7 +29,7 @@ typedef struct {
   uint32_t len;       // Length of the payload. A length of 0 in a response
                       // packet means the lookup failed
   payload contents;   // Payload
-  uint32_t checksum;  // Checksum of payload
+  uint32_t checksum;  // Checksum of packet
 } dns_packet;
 
 
@@ -48,12 +48,17 @@ dns_packet* new_dns_packet_ip(uint32_t ipv4_addr, bool isRequest);
 
 
 // Construct a 'lookup failed' response packet, which has 0 for every field
-dns_packet* new_dns_packet_lookup_failed();
+dns_packet* new_dns_packet_lookup_failed(bool is_lookup);
 
 
 // Send a dns packet as a message (datagram)
 // Returns size of packet sent, otherwise -1 for error
 int send_dns_packet(int sockfd, dns_packet*, struct sockaddr_in const* dest);
+
+
+// Deserialize a dns packet. Sets the argument packet struct to what was
+// received
+void deserialize(dns_packet* received, uint8_t const* buf);
 
 
 // Validate a dns packet
@@ -65,7 +70,8 @@ bool is_lookup_failed_packet(dns_packet const* packet);
 
 
 // Compute the checksum of a payload
-uint32_t checksum(uint8_t const* payload, size_t n);  
+uint32_t checksum(dns_packet const* packet);
+
 
 // Find out if the packet contains a string payload (var. length) or not
 // (fixed length), assuming it's well-formed.
