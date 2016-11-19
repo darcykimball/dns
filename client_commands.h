@@ -6,7 +6,7 @@
 #include "dns.h"
 
 
-#define N_COMMANDS 2
+#define N_COMMANDS 3
 
 
 // Lookup commands. There are only 2: lookup and reverse lookup.
@@ -23,6 +23,10 @@ void send_lookup_req(size_t argc, char** argv);
 
 // Send a reverse lookup request.
 void send_rev_lookup_req(size_t argc, char** argv);
+
+
+// Send a malformed request (bogus packet)
+void send_malformed_req(size_t argc, char** argv);
 
 
 #endif // CLIENT_COMMANDS_H

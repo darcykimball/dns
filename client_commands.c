@@ -10,7 +10,7 @@
 #include "shell.h"
 #include "dns.h"
 
-#define DEBUG
+//#define DEBUG
 #include "debug.h"
 
 
@@ -39,9 +39,10 @@ static bool parse_ip(char* input, uint32_t* addr);
 static void ip_as_string(uint32_t addr, char* out);
 
 
-command_pair dns_lookup_commands[2] = {
+command_pair dns_lookup_commands[N_COMMANDS] = {
   { "lookup", &send_lookup_req },
-  { "rev-lookup", &send_rev_lookup_req}
+  { "rev-lookup", &send_rev_lookup_req },
+  { "send-bogus", &send_malformed_req }
 };
 
 
@@ -158,6 +159,26 @@ void send_rev_lookup_req(size_t argc, char** argv) {
 
   // Cleanup
   destroy_dns_packet(&req);
+}
+
+
+void send_malformed_req(size_t argc, char** argv) {
+  dns_packet* bogus_req; // The malformed packet to send out
+
+  if (argc > 1) {
+    fprintf(stderr, "send_malformed_req(): I take no arguments!\n");
+    return;
+  }
+
+  bogus_req = new_dns_packet_dom("www.bogus.com", true);
+
+  // Mess up the packet
+  bogus_req->checksum = 0;
+
+  if (send_dns_packet(dns_server_fd, bogus_req, NULL) < 0) {
+    fprintf(stderr, "send_malformed_req(): Unable to send request!");
+    return;
+  }
 }
 
 

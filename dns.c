@@ -9,7 +9,7 @@
 #include "dns.h"
 #include "test.h"
 
-#define DEBUG
+//#define DEBUG
 #include "debug.h"
 
 
@@ -88,7 +88,6 @@ int send_dns_packet(int sockfd, dns_packet* packet, struct sockaddr_in const* de
   }
 
   // FIXME: remove!!
-  fprintf(stderr, "send_dns_packet():\n");
   DUMPI(packet->msg);
   DUMPI(packet->len);
   DUMPI(packet->checksum);

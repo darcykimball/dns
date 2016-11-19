@@ -28,16 +28,16 @@ void loop(command_pair* command_map, size_t n_commands) {
   char* tokens[MAX_N_TOKENS]; // To hold tokens for a given line
   size_t n_tokens; // Number of tokens for a given line
   command_fn cmd_fn; // Command to invoke
-  bool interactive = !isatty(fileno(stdin)); // Is this getting input interactively?
+  bool interactive = isatty(fileno(stdin)); // Is this getting input interactively?
 
-  if (interactive) {
+  if (!interactive) {
     echo = true;
   }
 
   // Main loop
   while (1) {
     // Print prompt
-    if (!interactive) {
+    if (interactive) {
       printf("%s", PROMPT_STR);
     }
 
