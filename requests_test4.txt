@@ -1,0 +1,11 @@
+lookup www.google.com
+
+
+lookup www.drive.google.com
+
+
+rev-lookup 5.6.7.8
+
+
+rev-lookup 1.2.3.4
+

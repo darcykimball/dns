@@ -1,0 +1,13 @@
+lookup www.blogspot.com
+
+
+lookup yahoo.com
+
+
+rev-lookup 1.23.134.21
+
+
+rev-lookup 1.2.3.4
+
+
+send-bogus
